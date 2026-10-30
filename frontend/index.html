@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Define character encoding -->
+    <meta charset="UTF-8">
+
+    <!-- Make website responsive on different devices -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Website title -->
+    <title>DigitAI | Handwritten Digit Recognition</title>
+
+    <!-- Connect external CSS file -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Main application container -->
+    <div class="container">
+
+        <!-- Website header -->
+        <header class="header">
+            <div class="logo">Digit<span>AI</span></div>
+            <p>Handwritten Digit Recognition</p>
+        </header>
+
+        <!-- Main application section -->
+        <main class="main-content">
+
+            <!-- Drawing section -->
+            <section class="drawing-section">
+
+                <h2>Draw a Digit</h2>
+
+                <p class="subtitle">
+                    Draw any number between 0 and 9
+                </p>
+
+                <!-- Drawing canvas -->
+                <div class="canvas-wrapper">
+                    <canvas id="drawingCanvas"
+                            width="280"
+                            height="280">
+                    </canvas>
+                </div>
+
+                <!-- Drawing controls -->
+                <div class="controls">
+
+                    <button id="clearBtn" class="clear-btn">
+                        Clear
+                    </button>
+
+                    <button id="predictBtn" class="predict-btn">
+                        Predict Digit
+                    </button>
+
+                </div>
+
+                <!-- Prediction result -->
+                <div class="result-section">
+
+                    <p>Predicted Digit</p>
+
+                    <h1 id="prediction">?</h1>
+
+                    <p id="confidence">
+                        Confidence: --
+                    </p>
+
+                    <p id="status"></p>
+
+                </div>
+
+                <!-- Prediction probabilities -->
+                <div class="probability-section">
+
+                    <h3>Digit Probabilities</h3>
+
+                    <div id="probabilities">
+                        Draw a digit to see predictions.
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- Model performance dashboard -->
+            <section class="metrics-section">
+
+                <h2>Model Performance</h2>
+
+                <p class="subtitle">
+                    CNN model evaluation metrics
+                </p>
+
+                <!-- Metrics cards -->
+                <div class="metrics-grid">
+
+                    <div class="metric-card">
+                        <p>Accuracy</p>
+                        <h2 id="accuracy">--</h2>
+                    </div>
+
+                    <div class="metric-card">
+                        <p>Precision</p>
+                        <h2 id="precision">--</h2>
+                    </div>
+
+                    <div class="metric-card">
+                        <p>Recall</p>
+                        <h2 id="recall">--</h2>
+                    </div>
+
+                    <div class="metric-card">
+                        <p>F1 Score</p>
+                        <h2 id="f1score">--</h2>
+                    </div>
+
+                </div>
+
+                <div class="model-info">
+                    <h3>Model Information</h3>
+
+                    <p>Dataset: MNIST</p>
+                    <p>Architecture: Convolutional Neural Network</p>
+                    <p>Input Size: 28 × 28 pixels</p>
+                    <p>Output Classes: 10 Digits</p>
+                </div>
+
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>DigitAI | Built using TensorFlow, CNN and Flask</p>
+        </footer>
+
+    </div>
+
+    <!-- Connect JavaScript file -->
+    <script src="script.js"></script>
+
+</body>
+</html>

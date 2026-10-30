@@ -1,0 +1,295 @@
+/* Reset default browser spacing */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Main website styling */
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0b1020;
+    color: #ffffff;
+    min-height: 100vh;
+    padding: 30px;
+}
+
+/* Main application container */
+.container {
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* Header section */
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.logo {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.logo span {
+    color: #38bdf8;
+}
+
+.header p {
+    color: #94a3b8;
+    margin-top: 8px;
+}
+
+/* Main content layout */
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    align-items: start;
+}
+
+/* Common section styling */
+.drawing-section,
+.metrics-section {
+    background: rgba(30, 41, 59, 0.75);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* Section headings */
+h2 {
+    font-size: 23px;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    color: #94a3b8;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+/* Canvas wrapper */
+.canvas-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 25px 0;
+}
+
+/* Drawing canvas */
+#drawingCanvas {
+    width: 280px;
+    height: 280px;
+    background: #ffffff;
+    border-radius: 12px;
+    cursor: crosshair;
+    touch-action: none;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Button container */
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 25px 0;
+}
+
+/* Common button styling */
+button {
+    border: none;
+    border-radius: 10px;
+    padding: 13px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.25s ease;
+}
+
+/* Clear button */
+.clear-btn {
+    background: #334155;
+    color: #ffffff;
+}
+
+.clear-btn:hover {
+    background: #475569;
+}
+
+/* Predict button */
+.predict-btn {
+    background: #0284c7;
+    color: white;
+}
+
+.predict-btn:hover {
+    background: #0369a1;
+    transform: translateY(-2px);
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Prediction result section */
+.result-section {
+    text-align: center;
+    background: #111827;
+    border-radius: 15px;
+    padding: 25px;
+    margin-top: 25px;
+}
+
+.result-section p {
+    color: #94a3b8;
+}
+
+.result-section h1 {
+    font-size: 75px;
+    color: #38bdf8;
+    margin: 10px 0;
+}
+
+#confidence {
+    color: #4ade80;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+#status {
+    margin-top: 12px;
+    font-size: 13px;
+}
+
+/* Probability section */
+.probability-section {
+    margin-top: 25px;
+}
+
+.probability-section h3 {
+    margin-bottom: 15px;
+}
+
+#probabilities {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+/* Individual probability rows */
+.probability-row {
+    margin-bottom: 12px;
+}
+
+.probability-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 13px;
+}
+
+.probability-track {
+    height: 8px;
+    background: #334155;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.probability-fill {
+    height: 100%;
+    background: #38bdf8;
+    border-radius: 20px;
+    transition: width 0.3s ease;
+}
+
+/* Metrics dashboard grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 25px;
+}
+
+/* Individual metric card */
+.metric-card {
+    background: #111827;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 14px;
+    padding: 22px;
+    text-align: center;
+}
+
+.metric-card p {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.metric-card h2 {
+    color: #38bdf8;
+    font-size: 28px;
+    margin-top: 12px;
+}
+
+/* Model information */
+.model-info {
+    background: #111827;
+    padding: 22px;
+    border-radius: 14px;
+    margin-top: 25px;
+}
+
+.model-info h3 {
+    margin-bottom: 15px;
+}
+
+.model-info p {
+    color: #94a3b8;
+    font-size: 14px;
+    margin: 12px 0;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    color: #64748b;
+    font-size: 13px;
+    margin-top: 35px;
+    padding: 20px;
+}
+
+/* Responsive layout for smaller screens */
+@media (max-width: 850px) {
+
+    body {
+        padding: 15px;
+    }
+
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+
+    .drawing-section,
+    .metrics-section {
+        padding: 22px;
+    }
+}
+
+/* Mobile screen adjustments */
+@media (max-width: 400px) {
+
+    #drawingCanvas {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1 / 1;
+    }
+
+    .controls {
+        flex-direction: column;
+    }
+
+    .controls button {
+        width: 100%;
+    }
+}
