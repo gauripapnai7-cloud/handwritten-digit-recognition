@@ -4,38 +4,22 @@ import cv2
 
 
 def predict_multiple_digits(image, model):
-    """
-    Horizontal aur multiple-row digits ko recognize karta hai.
-    Example:
-        32
-        21
-        92
 
-    Output:
-        32
-        21
-        92
-    """
-
-    # Image ko grayscale mein convert karo
     if len(image.shape) == 3:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     else:
         gray = image.copy()
 
-    # Black background aur white digits
     _, thresh = cv2.threshold(
         gray, 0, 255,
         cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
     )
 
-    # Noise remove karo
     kernel = np.ones((2, 2), np.uint8)
     thresh = cv2.morphologyEx(
         thresh, cv2.MORPH_OPEN, kernel
     )
 
-    # Connected digit regions find karo
     contours, _ = cv2.findContours(
         thresh,
         cv2.RETR_EXTERNAL,
@@ -47,7 +31,6 @@ def predict_multiple_digits(image, model):
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
 
-        # Chhote noise ko ignore karo
         if w < 5 or h < 10:
             continue
 
@@ -56,7 +39,6 @@ def predict_multiple_digits(image, model):
     if not digit_boxes:
         raise ValueError("Image mein koi digit nahi mila.")
 
-    # Top-to-bottom order mein rows identify karo
     digit_boxes.sort(key=lambda box: box[1])
 
     rows = []
@@ -67,7 +49,6 @@ def predict_multiple_digits(image, model):
 
         matched_row = None
 
-        # Existing row ke center ke aas-paas digit hai?
         for row in rows:
             row_center = np.mean([
                 item[1] + item[3] / 2
@@ -87,29 +68,22 @@ def predict_multiple_digits(image, model):
         else:
             matched_row.append(box)
 
-    # Har row ko left-to-right arrange karo
     for row in rows:
         row.sort(key=lambda box: box[0])
 
-    # Rows ko top-to-bottom arrange karo
     rows.sort(
         key=lambda row: min(box[1] for box in row)
     )
 
-    all_results = []
-    final_rows = []
+    processed_digits = []
+    digit_positions = []
 
-    # Har row ke digits predict karo
-    for row in rows:
-
-        row_prediction = ""
+    for row_index, row in enumerate(rows):
 
         for x, y, w, h in row:
 
-            # Digit crop karo
             digit = thresh[y:y+h, x:x+w]
 
-            # Aspect ratio preserve karke resize karo
             scale = 20.0 / max(w, h)
 
             new_w = max(1, int(w * scale))
@@ -120,7 +94,6 @@ def predict_multiple_digits(image, model):
                 (new_w, new_h)
             )
 
-            # 28x28 black canvas
             canvas = np.zeros(
                 (28, 28),
                 dtype=np.uint8
@@ -134,38 +107,39 @@ def predict_multiple_digits(image, model):
                 x_offset:x_offset + new_w
             ] = resized
 
-            # Normalize image
-            processed = canvas.astype("float32") / 255.0
-
-            # CNN input shape
-            processed = processed.reshape(
-                1, 28, 28, 1
+            processed_digits.append(
+                canvas.astype("float32") / 255.0
             )
 
-            # Model prediction
-            probabilities = model.predict(
-                processed,
-                verbose=0
-            )[0]
+            digit_positions.append(row_index)
 
-            predicted_digit = int(
-                np.argmax(probabilities)
-            )
+    batch = np.array(
+        processed_digits,
+        dtype="float32"
+    ).reshape(-1, 28, 28, 1)
 
-            confidence = float(
-                np.max(probabilities) * 100
-            )
+    predictions = model.predict(
+        batch,
+        verbose=0
+    )
 
-            row_prediction += str(predicted_digit)
+    all_results = []
+    final_rows = ["" for _ in rows]
 
-            all_results.append({
-                "digit": predicted_digit,
-                "confidence": round(confidence, 2)
-            })
+    for index, probabilities in enumerate(predictions):
 
-        final_rows.append(row_prediction)
+        predicted_digit = int(np.argmax(probabilities))
+        confidence = float(np.max(probabilities) * 100)
 
-    # Rows ko newline ke saath join karo
+        row_index = digit_positions[index]
+
+        final_rows[row_index] += str(predicted_digit)
+
+        all_results.append({
+            "digit": predicted_digit,
+            "confidence": round(confidence, 2)
+        })
+
     final_number = "\n".join(final_rows)
 
     return {
