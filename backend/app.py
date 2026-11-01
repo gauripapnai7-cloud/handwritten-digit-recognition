@@ -1,131 +1,165 @@
-# Import CORS to allow frontend requests
+
+# Import CORS
 from flask_cors import CORS
 
-# Import Flask modules for creating the backend server
-from flask import Flask, request, jsonify
+# Import Flask modules
+from flask import Flask, request, jsonify, send_from_directory
 
-# Import TensorFlow for loading our trained CNN model
+# Import TensorFlow
 import tensorflow as tf
 
-# Import NumPy for image array operations
+# Import NumPy
 import numpy as np
 
-# Import Pillow for image processing
+# Import Pillow
 from PIL import Image, ImageOps
 
-# Import OS for handling file paths
+# Import OS
 import os
 
-# Import JSON for reading evaluation metrics
+# Import JSON
 import json
 
-# Import BytesIO for processing image data in memory
+# Import BytesIO
 from io import BytesIO
 
-# Create the Flask application
-app = Flask(__name__)
-CORS(app);
+# Import multiple digit prediction function
+from predict import predict_multiple_digits
 
-# Get the root project directory
+
+# ==========================================
+# PROJECT PATHS
+# ==========================================
+
+# Get project root directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Define the trained model path
+# Frontend folder path
+FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
+
+# Model file path
 MODEL_PATH = os.path.join(
     BASE_DIR, "models", "mnist_cnn.keras"
 )
 
-# Define the evaluation metrics path
+# Evaluation metrics path
 METRICS_PATH = os.path.join(
     BASE_DIR, "models", "evaluation_metrics.json"
 )
 
-# Load the trained CNN model
+
+# ==========================================
+# CREATE FLASK APPLICATION
+# ==========================================
+
+# Connect frontend folder with Flask
+app = Flask(
+    __name__,
+    static_folder=FRONTEND_DIR,
+    static_url_path=""
+)
+
+# Enable CORS
+CORS(app)
+
+
+# ==========================================
+# LOAD CNN MODEL
+# ==========================================
+
 model = tf.keras.models.load_model(MODEL_PATH)
 
 print("CNN model loaded successfully!")
 
 
-# Function to preprocess the user's drawing
+# ==========================================
+# HOMEPAGE ROUTE
+# ==========================================
+
+@app.route("/")
+def home():
+    return send_from_directory(FRONTEND_DIR, "index.html")
+
+
+# ==========================================
+# SINGLE DIGIT IMAGE PREPROCESSING
+# ==========================================
+
 def preprocess_image(image):
 
     # Convert image to grayscale
     image = image.convert("L")
 
-    # Invert colors: white background becomes black
-    # Black drawing becomes white, matching MNIST style
+    # Invert colors
     image = ImageOps.invert(image)
 
-    # Find the bounding box containing the drawn digit
+    # Find digit boundaries
     bbox = image.getbbox()
 
-    # Return an error if the canvas is empty
     if bbox is None:
         raise ValueError("Please draw a digit first.")
 
-    # Crop the image around the digit
+    # Crop digit
     image = image.crop(bbox)
 
-    # Resize the digit while maintaining its aspect ratio
+    # Resize while maintaining aspect ratio
     image.thumbnail((20, 20))
 
-    # Create a blank 28x28 black image
+    # Create 28x28 black canvas
     canvas = Image.new("L", (28, 28), 0)
 
-    # Calculate position to center the digit
+    # Center digit
     x_offset = (28 - image.width) // 2
     y_offset = (28 - image.height) // 2
 
-    # Paste the resized digit into the center
     canvas.paste(image, (x_offset, y_offset))
 
-    # Convert image into a NumPy array
+    # Convert to NumPy array
     image_array = np.array(canvas, dtype="float32")
 
-    # Normalize pixel values from 0-255 to 0-1
+    # Normalize
     image_array = image_array / 255.0
 
-    # Add batch and channel dimensions
+    # Reshape for CNN
     image_array = image_array.reshape(1, 28, 28, 1)
 
     return image_array
 
 
-# API route for predicting handwritten digits
+# ==========================================
+# SINGLE DIGIT PREDICTION API
+# ==========================================
+
 @app.route("/api/predict", methods=["POST"])
 def predict():
 
     try:
 
-        # Get image data sent by the frontend
         data = request.get_json()
 
-        # Check whether image data exists
         if not data or "image" not in data:
-            return jsonify({"error": "Image data is missing."}), 400
+            return jsonify({
+                "error": "Image data is missing."
+            }), 400
 
-        # Remove the Data URL prefix
+        import base64
+
         image_data = data["image"].split(",", 1)[1]
 
-        # Decode the image data
-        import base64
         image_bytes = base64.b64decode(image_data)
 
-        # Open the image using Pillow
         image = Image.open(BytesIO(image_bytes))
 
-        # Preprocess the drawing for the CNN model
         processed_image = preprocess_image(image)
 
-        # Generate prediction probabilities
-        predictions = model.predict(processed_image, verbose=0)[0]
+        predictions = model.predict(
+            processed_image, verbose=0
+        )[0]
 
-        # Find the digit with the highest probability
         predicted_digit = int(np.argmax(predictions))
 
-        # Get confidence percentage
         confidence = float(np.max(predictions) * 100)
 
-        # Return prediction results
         return jsonify({
             "prediction": predicted_digit,
             "confidence": round(confidence, 2),
@@ -137,32 +171,88 @@ def predict():
 
     except ValueError as error:
 
-        # Return validation errors
-        return jsonify({"error": str(error)}), 400
+        return jsonify({
+            "error": str(error)
+        }), 400
 
     except Exception as error:
 
-        # Return unexpected errors
-        return jsonify({"error": str(error)}), 500
+        return jsonify({
+            "error": str(error)
+        }), 500
 
 
-# API route for fetching evaluation metrics
+# ==========================================
+# MULTIPLE DIGIT PREDICTION API
+# ==========================================
+
+@app.route("/api/predict-multiple", methods=["POST"])
+def predict_multiple():
+
+    try:
+
+        data = request.get_json()
+
+        if not data or "image" not in data:
+            return jsonify({
+                "error": "Image data is missing."
+            }), 400
+
+        import base64
+
+        image_data = data["image"].split(",", 1)[1]
+
+        image_bytes = base64.b64decode(image_data)
+
+        # Open image in grayscale
+        image = Image.open(
+            BytesIO(image_bytes)
+        ).convert("L")
+
+        image_array = np.array(image)
+
+        # Predict multiple digits
+        result = predict_multiple_digits(
+            image_array, model
+        )
+
+        return jsonify(result)
+
+    except ValueError as error:
+
+        return jsonify({
+            "error": str(error)
+        }), 400
+
+    except Exception as error:
+
+        return jsonify({
+            "error": str(error)
+        }), 500
+
+
+# ==========================================
+# EVALUATION METRICS API
+# ==========================================
+
 @app.route("/api/metrics", methods=["GET"])
 def get_metrics():
 
-    # Check whether metrics file exists
     if not os.path.exists(METRICS_PATH):
-        return jsonify({"error": "Evaluation metrics not found."}), 404
+        return jsonify({
+            "error": "Evaluation metrics not found."
+        }), 404
 
-    # Read saved evaluation metrics
     with open(METRICS_PATH, "r") as file:
         metrics = json.load(file)
 
-    # Return metrics as JSON
     return jsonify(metrics)
 
 
-# Start the Flask development server
+# ==========================================
+# START FLASK SERVER
+# ==========================================
+
 if __name__ == "__main__":
 
     app.run(

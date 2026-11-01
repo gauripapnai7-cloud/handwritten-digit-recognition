@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -35,8 +36,18 @@
                 <h2>Draw a Digit</h2>
 
                 <p class="subtitle">
-                    Draw any number between 0 and 9
+                    Draw any digit or number
                 </p>
+
+                <!-- Prediction mode selection -->
+                <div class="mode-selector">
+                    <label for="predictionMode">Prediction Mode:</label>
+
+                    <select id="predictionMode">
+                        <option value="single">Single Digit</option>
+                        <option value="multiple">Multiple Digits</option>
+                    </select>
+                </div>
 
                 <!-- Drawing canvas -->
                 <div class="canvas-wrapper">
@@ -49,11 +60,11 @@
                 <!-- Drawing controls -->
                 <div class="controls">
 
-                    <button id="clearBtn" class="clear-btn">
+                    <button id="clearBtn" class="clear-btn" type="button">
                         Clear
                     </button>
 
-                    <button id="predictBtn" class="predict-btn">
+                    <button id="predictBtn" class="predict-btn" type="button">
                         Predict Digit
                     </button>
 
@@ -62,7 +73,7 @@
                 <!-- Prediction result -->
                 <div class="result-section">
 
-                    <p>Predicted Digit</p>
+                    <p>Predicted Digit / Number</p>
 
                     <h1 id="prediction">?</h1>
 

@@ -1,58 +1,49 @@
+
 // ========================================
 // 1. GET HTML ELEMENTS
 // ========================================
 
-// Get the drawing canvas
 const canvas = document.getElementById("drawingCanvas");
-
-// Get the 2D drawing context
 const ctx = canvas.getContext("2d");
 
-// Get buttons
 const clearBtn = document.getElementById("clearBtn");
 const predictBtn = document.getElementById("predictBtn");
 
-// Get prediction result elements
 const predictionElement = document.getElementById("prediction");
 const confidenceElement = document.getElementById("confidence");
 const statusElement = document.getElementById("status");
 
-// Get probability container
 const probabilitiesElement = document.getElementById("probabilities");
+const predictionMode = document.getElementById("predictionMode");
 
 
 // ========================================
 // 2. CANVAS INITIALIZATION
 // ========================================
 
-// Set white background
-ctx.fillStyle = "#ffffff";
-ctx.fillRect(0, 0, canvas.width, canvas.height);
+function resetCanvas() {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
 
-// Configure drawing color
+resetCanvas();
+
 ctx.strokeStyle = "#000000";
-
-// Configure drawing thickness
 ctx.lineWidth = 15;
-
-// Make drawing lines smooth
 ctx.lineCap = "round";
 ctx.lineJoin = "round";
 
-// Track whether the user is drawing
 let isDrawing = false;
+let hasDrawn = false;
 
 
 // ========================================
-// 3. GET MOUSE / TOUCH POSITION
+// 3. GET POINTER POSITION
 // ========================================
 
 function getPosition(event) {
-
-    // Get canvas position and displayed dimensions
     const rect = canvas.getBoundingClientRect();
 
-    // Calculate position relative to the canvas
     const x = (event.clientX - rect.left) *
         (canvas.width / rect.width);
 
@@ -68,44 +59,31 @@ function getPosition(event) {
 // ========================================
 
 function startDrawing(event) {
-
-    // Prevent default browser behavior
     event.preventDefault();
 
-    // Mark drawing as active
     isDrawing = true;
+    hasDrawn = true;
 
-    // Get current pointer position
     const position = getPosition(event);
 
-    // Start a new drawing path
     ctx.beginPath();
-
-    // Move pen to current position
     ctx.moveTo(position.x, position.y);
 
-    // Draw a small dot for a single click/tap
     ctx.lineTo(position.x + 0.1, position.y + 0.1);
     ctx.stroke();
 }
 
 
 // ========================================
-// 5. DRAW ON CANVAS
+// 5. DRAW
 // ========================================
 
 function draw(event) {
-
-    // Stop if the user is not drawing
     if (!isDrawing) return;
 
-    // Get current pointer position
     const position = getPosition(event);
 
-    // Draw a line to the current position
     ctx.lineTo(position.x, position.y);
-
-    // Render the line
     ctx.stroke();
 }
 
@@ -115,24 +93,17 @@ function draw(event) {
 // ========================================
 
 function stopDrawing() {
-
-    // Mark drawing as inactive
     isDrawing = false;
-
-    // End current drawing path
     ctx.closePath();
 }
 
 
 // ========================================
-// 7. ATTACH DRAWING EVENTS
+// 7. DRAWING EVENTS
 // ========================================
 
-// Pointer events support mouse, touch and stylus
 canvas.addEventListener("pointerdown", startDrawing);
 canvas.addEventListener("pointermove", draw);
-
-// Stop drawing when pointer is released
 canvas.addEventListener("pointerup", stopDrawing);
 canvas.addEventListener("pointerleave", stopDrawing);
 canvas.addEventListener("pointercancel", stopDrawing);
@@ -144,119 +115,151 @@ canvas.addEventListener("pointercancel", stopDrawing);
 
 clearBtn.addEventListener("click", function() {
 
-    // Clear the entire canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    resetCanvas();
 
-    // Restore white background
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    hasDrawn = false;
 
-    // Reset prediction result
     predictionElement.textContent = "?";
+    predictionElement.style.whiteSpace = "normal";
 
-    // Reset confidence
     confidenceElement.textContent = "Confidence: --";
-
-    // Clear status
     statusElement.textContent = "";
 
-    // Reset probabilities
     probabilitiesElement.textContent =
         "Draw a digit to see predictions.";
+});
+
+
+// ========================================
+// 9. PREDICTION MODE
+// ========================================
+
+predictionMode.addEventListener("change", function() {
+
+    predictionElement.textContent = "?";
+    predictionElement.style.whiteSpace = "normal";
+
+    confidenceElement.textContent = "Confidence: --";
+    statusElement.textContent = "";
+
+    probabilitiesElement.textContent =
+        predictionMode.value === "multiple"
+        ? "Draw multiple digits in one or more rows."
+        : "Draw a digit to see predictions.";
 
 });
 
 
 // ========================================
-// 9. PREDICT DIGIT
+// 10. PREDICT DIGITS
 // ========================================
 
 predictBtn.addEventListener("click", async function() {
 
-    // Convert canvas image into Base64 PNG data
+    if (!hasDrawn) {
+        statusElement.textContent = "Please draw something first.";
+        return;
+    }
+
+    const mode = predictionMode.value;
+
+    const endpoint = mode === "multiple"
+        ? "/api/predict-multiple"
+        : "/api/predict";
+
     const imageData = canvas.toDataURL("image/png");
 
-    // Update status
     statusElement.textContent = "Predicting...";
 
-    // Disable button while prediction is running
     predictBtn.disabled = true;
 
     try {
 
-        // Send drawing image to Flask backend
-        const response = await fetch(
-            "http://127.0.0.1:5000/api/predict",
-            {
-                method: "POST",
+        const response = await fetch(endpoint, {
+            method: "POST",
 
-                // Specify JSON request format
-                headers: {
-                    "Content-Type": "application/json"
-                },
+            headers: {
+                "Content-Type": "application/json"
+            },
 
-                // Send image data
-                body: JSON.stringify({
-                    image: imageData
-                })
-            }
-        );
+            body: JSON.stringify({
+                image: imageData
+            })
+        });
 
-        // Convert server response into JSON
         const result = await response.json();
 
-        // Handle backend errors
         if (!response.ok) {
             throw new Error(result.error || "Prediction failed.");
         }
 
-        // Display predicted digit
-        predictionElement.textContent = result.prediction;
+        // SINGLE DIGIT RESULT
+        if (mode === "single") {
 
-        // Display prediction confidence
-        confidenceElement.textContent =
-            `Confidence: ${result.confidence}%`;
+            predictionElement.textContent = result.prediction;
+            predictionElement.style.whiteSpace = "normal";
 
-        // Update status
+            confidenceElement.textContent =
+                `Confidence: ${result.confidence}%`;
+
+            displayProbabilities(result.probabilities);
+
+        }
+
+        // MULTIPLE DIGIT RESULT
+        else {
+
+            // Preserve multiple row formatting
+            predictionElement.textContent = result.prediction;
+            predictionElement.style.whiteSpace = "pre-line";
+
+            const averageConfidence = result.digits.length
+                ? result.digits.reduce(
+                    (sum, item) => sum + item.confidence, 0
+                  ) / result.digits.length
+                : 0;
+
+            confidenceElement.textContent =
+                `Average Confidence: ${averageConfidence.toFixed(2)}%`;
+
+            displayMultipleDigits(result);
+
+        }
+
         statusElement.textContent = "Prediction successful!";
-
-        // Display probability bars
-        displayProbabilities(result.probabilities);
 
     } catch (error) {
 
-        // Display error message
+        predictionElement.textContent = "?";
+        confidenceElement.textContent = "Confidence: --";
+
         statusElement.textContent = error.message;
 
         console.error("Prediction error:", error);
 
     } finally {
 
-        // Enable predict button again
         predictBtn.disabled = false;
+
     }
 
 });
 
 
 // ========================================
-// 10. DISPLAY PROBABILITIES
+// 11. DISPLAY SINGLE DIGIT PROBABILITIES
 // ========================================
 
 function displayProbabilities(probabilities) {
 
-    // Clear previous probability results
     probabilitiesElement.innerHTML = "";
 
-    // Loop through all 10 digit probabilities
     probabilities.forEach((probability, digit) => {
 
-        // Create a row for each digit
         const row = document.createElement("div");
 
         row.className = "probability-row";
 
-        // Add digit label and probability
         row.innerHTML = `
             <div class="probability-info">
                 <span>Digit ${digit}</span>
@@ -270,7 +273,6 @@ function displayProbabilities(probabilities) {
             </div>
         `;
 
-        // Add row to the probability container
         probabilitiesElement.appendChild(row);
 
     });
@@ -279,27 +281,82 @@ function displayProbabilities(probabilities) {
 
 
 // ========================================
-// 11. LOAD MODEL EVALUATION METRICS
+// 12. DISPLAY MULTIPLE DIGIT RESULTS
+// ========================================
+
+function displayMultipleDigits(result) {
+
+    probabilitiesElement.innerHTML = "";
+
+    const heading = document.createElement("h3");
+    heading.textContent = "Individual Digit Predictions";
+
+    probabilitiesElement.appendChild(heading);
+
+    // Get rows and individual digit predictions
+    const rows = result.rows || [result.prediction];
+    const digits = result.digits || [];
+
+    let digitIndex = 0;
+
+    rows.forEach((rowDigits, rowIndex) => {
+
+        const rowHeading = document.createElement("h4");
+
+        rowHeading.textContent = `Row ${rowIndex + 1}: ${rowDigits}`;
+
+        probabilitiesElement.appendChild(rowHeading);
+
+        // Show confidence for every digit in this row
+        for (let i = 0; i < rowDigits.length; i++) {
+
+            const item = digits[digitIndex];
+
+            if (!item) break;
+
+            const row = document.createElement("div");
+
+            row.className = "probability-row";
+
+            row.innerHTML = `
+                <div class="probability-info">
+                    <span>Digit ${digitIndex + 1}: ${item.digit}</span>
+                    <span>${item.confidence.toFixed(2)}%</span>
+                </div>
+
+                <div class="probability-track">
+                    <div class="probability-fill"
+                         style="width: ${Math.min(100, Math.max(0, item.confidence))}%">
+                    </div>
+                </div>
+            `;
+
+            probabilitiesElement.appendChild(row);
+
+            digitIndex++;
+        }
+
+    });
+
+}
+
+
+// ========================================
+// 13. LOAD MODEL EVALUATION METRICS
 // ========================================
 
 async function loadMetrics() {
 
     try {
 
-        // Request evaluation metrics from Flask backend
-        const response = await fetch(
-            "http://127.0.0.1:5000/api/metrics"
-        );
+        const response = await fetch("/api/metrics");
 
-        // Convert response to JSON
         const metrics = await response.json();
 
-        // Handle API errors
         if (!response.ok) {
             throw new Error(metrics.error || "Unable to load metrics.");
         }
 
-        // Convert decimal values into percentages
         document.getElementById("accuracy").textContent =
             (metrics.accuracy * 100).toFixed(2) + "%";
 
@@ -314,7 +371,6 @@ async function loadMetrics() {
 
     } catch (error) {
 
-        // Display errors in browser console
         console.error("Metrics loading error:", error);
 
     }
@@ -323,7 +379,7 @@ async function loadMetrics() {
 
 
 // ========================================
-// 12. LOAD METRICS WHEN PAGE OPENS
+// 14. LOAD METRICS
 // ========================================
 
 loadMetrics();
