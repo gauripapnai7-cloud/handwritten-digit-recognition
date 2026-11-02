@@ -1,25 +1,31 @@
-# Python cache files
-__pycache__/
-*.py[cod]
-
-# Virtual environments
+# Virtual Environment
 venv/
 env/
 .venv/
 
-# Jupyter temporary files
+# Python Cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Jupyter Notebook
 .ipynb_checkpoints/
 
-# IDE files
-.vscode/
-
-# Python environment files
+# Environment Variables
 .env
+.env.*
 
-# Large dataset files
-data/raw/
-data/processed/
+# Streamlit Secrets
+.streamlit/secrets.toml
 
-# OS generated files
+# IDE
+.vscode/
+.idea/
+
+# OS Files
 .DS_Store
 Thumbs.db
+
+# Temporary Files
+*.log
+*.tmp

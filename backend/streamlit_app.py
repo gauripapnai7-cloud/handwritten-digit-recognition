@@ -218,7 +218,7 @@ div[data-testid="stCanvas"] iframe {
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow-wrap: anywhere;
+    overflow-wrap: anywhere;.\venv\Scripts\Activate
     white-space: pre-line;
     line-height: 1.2;
     margin: 10px auto; 
